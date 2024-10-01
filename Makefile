@@ -6,7 +6,7 @@ DIRSERVER=./cmd/server
 all: run_server
 
 run_server: 
-	sudo docker-compose up --build -d
+	docker-compose up --build -d
 	go run $(DIRSERVER)/main.go
 
 run_client: 
