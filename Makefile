@@ -1,6 +1,5 @@
 .PHONY: run_server run_client
 
-STATICLIB=s21_containers_oop.a
 DIRCLIENT=./cmd/client
 DIRSERVER=./cmd/server
 

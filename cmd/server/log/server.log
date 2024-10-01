@@ -1,0 +1,16 @@
+2024-10-01 12:20:20.31764396 +0300 MSK m=+0.005243486 server listening at 127.0.0.1:3336
+2024-10-01 12:20:25.353555479 +0300 MSK m=+5.041154994 ConnectToDB: error to connect, please wait failed to connect to `host=localhost user=k123ulakov database=file_storage`: failed SASL auth (FATAL: password authentication failed for user "k123ulakov" (SQLSTATE 28P01))
+2024-10-01 12:22:36.324523128 +0300 MSK m=+0.006494473 server listening at 127.0.0.1:3336
+2024-10-01 12:22:41.349631946 +0300 MSK m=+5.031603250 ConnectToDB: error to connect, please wait failed to connect to `host=localhost user=k123ulakov database=file_storage`: failed SASL auth (FATAL: password authentication failed for user "k123ulakov" (SQLSTATE 28P01))
+2024-10-01 12:23:54.618585785 +0300 MSK m=+0.004907280 server listening at 127.0.0.1:3336
+2024-10-01 12:24:03.917743685 +0300 MSK m=+9.304065171 Login: Пользователь "Dima" - успешный вход
+2024-10-01 12:24:05.36638847 +0300 MSK m=+10.752709999 GetFiles: user Dima - OK
+2024-10-01 12:24:13.918985103 +0300 MSK m=+19.305306604 server stopped
+2024-10-01 12:32:06.547024725 +0300 MSK m=+0.006210311 server listening at 127.0.0.1:3336
+2024-10-01 12:32:13.652203051 +0300 MSK m=+7.111388605 Login: Попытка зайти под не зарегестрированным пользователем "dsa"
+2024-10-01 12:32:22.306066329 +0300 MSK m=+15.765251923 Login: Пользователь "Kolya" - зарегестрирован
+2024-10-01 12:32:24.372149018 +0300 MSK m=+17.831334584 GetFiles: user Kolya - OK
+2024-10-01 12:32:29.991564437 +0300 MSK m=+23.450750051 GetFile: user Kolya: the file "dsfsdf" is not exist: open ./cmd/server/serverStorage/dsfsdf: no such file or directory
+2024-10-01 12:34:47.83578589 +0300 MSK m=+161.294971500 Login: Пользователь "Dima" - успешный вход
+2024-10-01 12:34:49.064820464 +0300 MSK m=+162.524006016 GetFiles: user Dima - OK
+2024-10-01 12:35:26.662797519 +0300 MSK m=+200.121983082 server stopped

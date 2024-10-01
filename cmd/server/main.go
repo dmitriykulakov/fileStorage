@@ -3,14 +3,16 @@ package main
 import (
 	"context"
 	db "fileStorage/cmd/server/database"
+	l "fileStorage/cmd/server/log"
 	api "fileStorage/cmd/server/serverAPI"
 	"fileStorage/config"
 	gRPC "fileStorage/proto"
-	"log"
+	"fmt"
 	"net"
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"google.golang.org/grpc"
@@ -20,23 +22,29 @@ var srv *grpc.Server
 
 func main() {
 	var wg sync.WaitGroup
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go l.Logger(ctx, &wg)
+	go broadcast(ctx, &wg)
+	wg.Add(2)
+
 	cfg := config.ConfigLoad()
 	lis, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("failed to listen: %v", err), Level: "fatal"}
 	}
+
 	srv = grpc.NewServer()
-	log.Printf("server listening at %v", lis.Addr())
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-	defer stop()
-	wg.Add(1)
-	go broadcast(ctx, &wg)
+	l.ChLog <- l.Log{Message: fmt.Sprintf("server listening at %v", lis.Addr()), Level: ""}
+
 	gRPC.RegisterFileStorageServer(srv, &api.Server{})
 	if err := srv.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("failed to serve: %v", err), Level: "fatal"}
 	}
+
 	wg.Wait()
-	log.Println("The server is stopped")
 }
 
 func broadcast(ctx context.Context, wg *sync.WaitGroup) {

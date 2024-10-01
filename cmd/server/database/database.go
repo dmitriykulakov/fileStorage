@@ -1,9 +1,10 @@
 package database
 
 import (
+	l "fileStorage/cmd/server/log"
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v3"
 	"gorm.io/driver/postgres"
@@ -32,8 +33,15 @@ func ConnectToDB() *gorm.DB {
 	pg.GetConf()
 	cfg := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable", pg.Host, pg.Username, pg.Password, pg.Database, pg.Port)
 	db, err := gorm.Open(postgres.Open(cfg), &gorm.Config{})
+	for i := 0; i < 5 && err != nil; i++ {
+		time.Sleep(time.Second * 5)
+		db, err = gorm.Open(postgres.Open(cfg), &gorm.Config{})
+		if err != nil {
+			l.ChLog <- l.Log{Message: fmt.Sprintf("ConnectToDB: error to connect, please wait %v", err), Level: "fatal"}
+		}
+	}
 	if err != nil {
-		log.Fatalf("ConnectToDB: error to connect %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("ConnectToDB: error to connect %v", err), Level: "fatal"}
 	}
 	db.AutoMigrate(&Clients{})
 	return db
@@ -42,11 +50,11 @@ func ConnectToDB() *gorm.DB {
 func (p *PgConfig) GetConf() *PgConfig {
 	conf, err := os.ReadFile(configPath)
 	if err != nil {
-		log.Fatalf("GetConf: file not found: %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("GetConf: file not found: %v", err), Level: "fatal"}
 	}
 	err = yaml.Unmarshal(conf, p)
 	if err != nil {
-		log.Fatalf("GetConf: error unmarshalling yaml file: %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("GetConf: error unmarshalling yaml file: %v", err), Level: "fatal"}
 	}
 	return p
 }
@@ -55,25 +63,25 @@ func (f *Clients) Login(p *gorm.DB) string {
 	var clients []Clients
 	p.Table("clients").Where("name = ?", f.Name).Find(&clients)
 	if len(clients) == 0 {
-		log.Printf("Login: Попытка зайти под незарегестрированным пользователем \"%s\"\n", f.Name)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("Login: Попытка зайти под не зарегестрированным пользователем \"%s\"", f.Name), Level: ""}
 		return fmt.Sprintf("Пользователь \"%s\" не зарегестрирован", f.Name)
 	}
 	if clients[0].Password == f.Password {
-		log.Printf("Login: Пользователь \"%s\" - успешный вход\n", f.Name)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("Login: Пользователь \"%s\" - успешный вход", f.Name), Level: ""}
 		return c.LogResp
 	}
-	log.Printf("Login: Пользователь \"%s\" - введен неверный пароль\n", f.Name)
-	return fmt.Sprintf("Неверный пароль для пользвателя \"%s\"", f.Name)
+	l.ChLog <- l.Log{Message: fmt.Sprintf("Login: Пользователь \"%s\" - введен неверный пароль", f.Name), Level: ""}
+	return fmt.Sprintf("Неверный пароль для пользователя \"%s\"", f.Name)
 }
 
 func (f *Clients) Reg(p *gorm.DB) string {
 	var clients []Clients
 	p.Table("clients").Where("name = ?", f.Name).Find(&clients)
 	if len(clients) != 0 {
-		log.Printf("Login: Попытка зарегестриваться под существующим пользователем \"%s\"\n", f.Name)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("Login: Попытка зарегестриваться под существующим пользователем \"%s\"", f.Name), Level: ""}
 		return fmt.Sprintf("Пользователь \"%s\" уже зарегестрирован", f.Name)
 	}
 	p.Table("clients").Select("Name", "Password").Create(f)
-	log.Printf("Login: Пользователь \"%s\" - зарегетрирован\n", f.Name)
+	l.ChLog <- l.Log{Message: fmt.Sprintf("Login: Пользователь \"%s\" - зарегестрирован", f.Name), Level: ""}
 	return c.RegResp
 }

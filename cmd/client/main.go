@@ -15,7 +15,7 @@ func main() {
 	cfg := config.ConfigLoad()
 	conn, err := grpc.NewClient(cfg.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("error connecting to server: %v", err)
+		log.Fatalf("error connecting to server: %v", err.Error())
 	}
 	defer conn.Close()
 	client := gRPC.NewFileStorageClient(conn)

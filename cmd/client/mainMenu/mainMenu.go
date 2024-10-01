@@ -16,7 +16,7 @@ const downloadPath = "./cmd/client/download/"
 func MainMenu(cfg *config.HTTPServer, client *gRPC.FileStorageClient, clientName string) {
 	var result string
 	for {
-		fmt.Println("Главное меню:\n\t1:\tПолучить список файлов\n\t2:\tЗагрузить файл в хранилище\n\t3:\tСкачать файл с хранилища\n\t4:\tВыход")
+		fmt.Println("\nГлавное меню:\n\t1:\tПолучить список файлов\n\t2:\tЗагрузить файл в хранилище\n\t3:\tСкачать файл с хранилища\n\t4:\tВыход")
 		fmt.Scan(&result)
 		switch result {
 		case "1":
@@ -89,7 +89,6 @@ func getFile(client *gRPC.FileStorageClient, clientName string) {
 			}
 		}
 	}
-
 }
 
 func postFile(client *gRPC.FileStorageClient, cfg *config.HTTPServer, clientName string) {
@@ -115,9 +114,11 @@ func postFile(client *gRPC.FileStorageClient, cfg *config.HTTPServer, clientName
 		fmt.Println(err)
 	}
 	defer func() {
-		err := clientSTR.CloseSend()
+		resp, err := clientSTR.CloseAndRecv()
 		if err != nil {
 			fmt.Println(err)
+		} else {
+			fmt.Println(resp.Response)
 		}
 	}()
 	for errRead != io.EOF {
@@ -129,12 +130,8 @@ func postFile(client *gRPC.FileStorageClient, cfg *config.HTTPServer, clientName
 			FileData: buf,
 			Client:   clientName,
 		}
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		err = clientSTR.Send(request)
-		if err != nil {
+		err := clientSTR.Send(request)
+		if err != nil && err != io.EOF {
 			fmt.Println(err)
 			return
 		}

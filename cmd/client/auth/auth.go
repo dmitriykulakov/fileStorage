@@ -54,7 +54,7 @@ func Login(client *gRPC.FileStorageClient) (string, bool) {
 			return login, true
 		} else {
 			fmt.Println(resp.Response)
-			fmt.Println("1: Попробовать еще раз")
+			fmt.Println("\t1:\tПопробовать еще раз\n\t2:\tНазад")
 			fmt.Scan(&login)
 			if login != "1" {
 				return "", false
@@ -73,14 +73,15 @@ func Registration(client *gRPC.FileStorageClient) (string, bool) {
 		fmt.Scan(&password)
 		resp, err := (*client).Reg(context.Background(), &gRPC.RegRequest{Login: login, Password: password})
 		if err != nil {
-			fmt.Println(err)
+			fmt.Println(err.Error())
+			return "", false
 		}
 		if resp.Response == c.RegResp {
 			fmt.Println(resp.Response, login)
 			return login, true
 		} else {
 			fmt.Println(resp.Response)
-			fmt.Println("1: Попробовать еще раз")
+			fmt.Println("\t1:\t Попробовать еще раз\n\t2\tНазад")
 			fmt.Scan(&login)
 			if login != "1" {
 				return "", false

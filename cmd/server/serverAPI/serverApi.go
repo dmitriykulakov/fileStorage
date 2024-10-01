@@ -3,6 +3,7 @@ package serverAPI
 import (
 	"context"
 	db "fileStorage/cmd/server/database"
+	l "fileStorage/cmd/server/log"
 	"fileStorage/config"
 	gRPC "fileStorage/proto"
 	"fmt"
@@ -37,12 +38,12 @@ func (s *Server) Reg(_ context.Context, r *gRPC.RegRequest) (*gRPC.RegResponse, 
 func (s *Server) GetFiles(r *gRPC.GetFilesRequest, t gRPC.FileStorage_GetFilesServer) error {
 	dir, err := os.Open(storagePath)
 	if err != nil {
-		log.Fatalf("GetFiles: %v", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("GetFiles: %s", err), Level: "fatal"}
 	}
 	defer dir.Close()
 	dirContain, err := dir.Readdir(-2)
 	if err != nil {
-		log.Fatalf("GetFiles: %s", err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("GetFiles: %s", err), Level: "fatal"}
 	}
 	for _, file := range dirContain {
 		resp := &gRPC.GetFilesResponse{
@@ -53,7 +54,7 @@ func (s *Server) GetFiles(r *gRPC.GetFilesRequest, t gRPC.FileStorage_GetFilesSe
 			return err
 		}
 	}
-	log.Printf("GetFiles: user %s - OK", r.Client)
+	l.ChLog <- l.Log{Message: fmt.Sprintf("GetFiles: user %s - OK", r.Client), Level: ""}
 	return nil
 }
 
@@ -62,7 +63,7 @@ func (s *Server) GetFile(r *gRPC.GetFileRequest, t gRPC.FileStorage_GetFileServe
 	file, err := os.Open(storagePath + r.Filename)
 	if err != nil {
 		err := fmt.Errorf("the file \"%s\" is not exist: %v", r.Filename, err)
-		log.Printf("GetFile: user %s: %v", r.Client, err)
+		l.ChLog <- l.Log{Message: fmt.Sprintf("GetFile: user %s: %v", r.Client, err), Level: ""}
 		return err
 	}
 	buf := make([]byte, cfg.MaxByteSend)
@@ -81,11 +82,13 @@ func (s *Server) GetFile(r *gRPC.GetFileRequest, t gRPC.FileStorage_GetFileServe
 		}
 		pos, err = file.Read(buf)
 	}
-	log.Printf("GetFile: user %s: the file \"%s\" is sent, OK", r.Client, r.Filename)
+	l.ChLog <- l.Log{Message: fmt.Sprintf("GetFile: user %s: the file \"%s\" is sent, OK", r.Client, r.Filename), Level: ""}
 	return nil
 }
 
 func (s *Server) PostFile(t gRPC.FileStorage_PostFileServer) error {
+	var filename string
+	var client string
 	var fileCreate *os.File
 	var mu sync.Mutex
 	mu.Lock()
@@ -98,27 +101,35 @@ func (s *Server) PostFile(t gRPC.FileStorage_PostFileServer) error {
 			if !flagCreated {
 				if _, err = os.Open((storagePath + file.Filename)); err == nil {
 					err := fmt.Errorf("the file \"%s\" is already exist ", file.Filename)
-					log.Printf("PostFile: user %s: %v", file.Client, err)
+					l.ChLog <- l.Log{Message: fmt.Sprintf("PostFile: user %s: %v", file.Client, err), Level: ""}
 					return err
 				}
 				fileCreate, err = os.Create(storagePath + file.Filename)
 				if err != nil {
 					err := fmt.Errorf("error  with create the file \"%s\"", file.Filename)
-					log.Printf("PostFile: user %s: %v", file.Client, err)
+					l.ChLog <- l.Log{Message: fmt.Sprintf("PostFile: user %s: %v", file.Client, err), Level: ""}
 					return err
 				}
+				client = file.Client
+				filename = file.Filename
 				flagCreated = true
-				log.Printf("user %s: Created new file %s\n", file.Client, file.Filename)
+				l.ChLog <- l.Log{Message: fmt.Sprintf("PostFile: user %s: Created new file %s", file.Client, file.Filename), Level: ""}
 			}
 			if _, err = fileCreate.Write([]byte(file.FileData)); err != nil {
-				fmt.Printf("user %s: error with write the file \"%s\": %v\n", file.Client, file.Filename, err)
+				l.ChLog <- l.Log{Message: fmt.Sprintf("PostFile: user %s: error with write the file \"%s\": %v", file.Client, file.Filename, err), Level: ""}
 				return err
 			}
 		} else {
 			flag = false
 			if err != io.EOF {
-				fmt.Printf("user %s: Файла \"%s\" нет в хранилище\n, %v", file.Client, file.Filename, err)
+				log.Println(err)
+				return err
 			}
+			l.ChLog <- l.Log{Message: fmt.Sprintf("PostFile: user %s: the file %s is saved", client, filename), Level: ""}
+			t.SendAndClose(&gRPC.PostFileResponse{
+				Response: "the file " + filename + " is saved",
+			})
+			return nil
 		}
 	}
 	return nil
