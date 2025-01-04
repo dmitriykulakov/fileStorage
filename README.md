@@ -34,15 +34,15 @@ Dockerfile распологается в корне проекта
 
 Файл конфигурации сервера находится в файле config.env
 
-SERVER_ADDRESS - адрес, на котором запускается сервер (defaut: 0.0.0.0:3353)
-ADDRESS_FOR_DB - адрес, для прямого подключения к базе данных (defaut: 3354)
-STORAGE_PATH - путь для хранения файлов пользователей  (defaut: ./serverStorage/)
-MAX_BYTE_SEND - размер пакетов данных при передаче файлов  (defaut: 1000)
-POSTGRES_HOST - хост БД  (defaut: localhost)
-POSTGRES_PORT - порт, на котором запускается БД  (defaut: 5432)
-POSTGRES_USERNAME - имя пользователя БД, создается при запуске БД (defaut: kulakov)
-POSTGRES_PASSWORD - пароль пользователя БД (defaut: 1234)
-POSTGRES_NAME - название БД (defaut: fileStorage)
+- SERVER_ADDRESS - адрес, на котором запускается сервер (defaut: 0.0.0.0:3353)
+- ADDRESS_FOR_DB - адрес, для прямого подключения к базе данных (defaut: 3354)
+- STORAGE_PATH - путь для хранения файлов пользователей  (defaut: ./serverStorage/)
+- MAX_BYTE_SEND - размер пакетов данных при передаче файлов  (defaut: 1000)
+- POSTGRES_HOST - хост БД  (defaut: localhost)
+- POSTGRES_PORT - порт, на котором запускается БД  (defaut: 5432)
+- POSTGRES_USERNAME - имя пользователя БД, создается при запуске БД (defaut: kulakov)
+- POSTGRES_PASSWORD - пароль пользователя БД (defaut: 1234)
+- POSTGRES_NAME - название БД (defaut: fileStorage)
 
 TokenTTL - время "жизни" токена (defaut: 1hour)
 
