@@ -2,65 +2,52 @@ package main
 
 import (
 	"context"
-	db "fileStorage/cmd/server/database"
-	l "fileStorage/cmd/server/log"
-	api "fileStorage/cmd/server/serverAPI"
-	"fileStorage/config"
-	gRPC "fileStorage/proto"
+	"fileStorage/internal/api"
+	"fileStorage/internal/config"
+	"fileStorage/internal/database"
+	"fileStorage/internal/logger"
+	gRPC "fileStorage/internal/proto"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
-	"time"
 
+	"github.com/joho/godotenv"
+	"go.uber.org/zap"
 	"google.golang.org/grpc"
 )
 
-var srv *grpc.Server
+func init() {
+	if err := godotenv.Load("config.env"); err != nil {
+		log.Print("No .env file found")
+	}
+}
 
 func main() {
 	var wg sync.WaitGroup
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-
-	go l.Logger(ctx, &wg)
-	go broadcast(ctx, &wg)
-	wg.Add(2)
-
-	cfg := config.ConfigLoad()
+	srv := grpc.NewServer()
+	cfg := config.NewConfig()
+	zapLog, err := logger.NewLogger(cfg.LogFilePath)
+	if err != nil {
+		log.Fatal("failed to create logs")
+	}
+	server := &api.Server{Cfg: &cfg.ServerConfig, Logger: zapLog}
+	gRPC.RegisterFileStorageServer(srv, server)
+	wg.Add(1)
+	go database.Broadcast(ctx, &wg, &cfg.DbConfig, srv, zapLog)
 	lis, err := net.Listen("tcp", cfg.Address)
 	if err != nil {
-		l.ChLog <- l.Log{Message: fmt.Sprintf("failed to listen: %v", err), Level: "fatal"}
+		zapLog.Fatal("main", zap.String("description", "failed to listen"), zap.String("error", err.Error()))
 	}
-
-	srv = grpc.NewServer()
-	l.ChLog <- l.Log{Message: fmt.Sprintf("server listening at %v", lis.Addr()), Level: ""}
-
-	gRPC.RegisterFileStorageServer(srv, &api.Server{})
+	zapLog.Info("main", zap.String("description", fmt.Sprintf("server listening at %v", lis.Addr())), zap.String("error", "nil"))
 	if err := srv.Serve(lis); err != nil {
-		l.ChLog <- l.Log{Message: fmt.Sprintf("failed to serve: %v", err), Level: "fatal"}
+		zapLog.Fatal("main", zap.String("description", "failed to listen"), zap.String("error", err.Error()))
 	}
-
 	wg.Wait()
-}
-
-func broadcast(ctx context.Context, wg *sync.WaitGroup) {
-	dataBase := db.ConnectToDB()
-	for {
-		select {
-		case <-ctx.Done():
-			srv.Stop()
-			wg.Done()
-			return
-		case client := <-api.LoginCh:
-			api.DbResponse <- client.Login(dataBase)
-		case client := <-api.RegCh:
-			api.DbResponse <- client.Reg(dataBase)
-		default:
-			time.Sleep(time.Duration(time.Millisecond))
-		}
-	}
 }

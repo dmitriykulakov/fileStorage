@@ -17,7 +17,7 @@ message LogInRequest {
 }
 
 message LogInResponse {
-  string response = 1;
+  string token = 1;
 }
 
 message RegRequest {
@@ -26,11 +26,11 @@ message RegRequest {
 }
 
 message RegResponse {
-  string response = 1;
+  string token = 1;
 }
 
 message GetFilesRequest {
-  string client = 1;
+  string token = 1;
 }
 
 message  GetFilesResponse {
@@ -40,7 +40,7 @@ message  GetFilesResponse {
 message PostFileRequest {
   string filename = 1;
   bytes fileData = 2;
-  string client = 3;
+  string token = 3;
 }
 
 message PostFileResponse {
@@ -49,7 +49,7 @@ message PostFileResponse {
 
 message GetFileRequest {
   string filename = 1;
-  string client = 2;
+  string token = 2;
 }
 
 message  GetFileResponse {
