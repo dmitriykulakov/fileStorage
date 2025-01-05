@@ -9,7 +9,7 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func NewLogger(filePath string) (*zap.Logger, error) {
+func NewLogger(filePath string, level *zapcore.Level) (*zap.Logger, error) {
 	fileName := path.Join(filePath, time.Now().Format("2006-01-02_15:04:05")+".log")
 	if err := os.MkdirAll(filePath, os.ModePerm); err != nil {
 		return nil, err
@@ -23,10 +23,9 @@ func NewLogger(filePath string) (*zap.Logger, error) {
 	pe.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05.000000")
 
 	consoleEncoder := zapcore.NewConsoleEncoder(pe)
-
 	core := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(f), zap.InfoLevel),
-		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), zap.InfoLevel),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(f), level),
+		zapcore.NewCore(consoleEncoder, zapcore.AddSync(os.Stdout), level),
 	)
 
 	l := zap.New(core)

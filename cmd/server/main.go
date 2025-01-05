@@ -33,7 +33,7 @@ func main() {
 	defer stop()
 	srv := grpc.NewServer()
 	cfg := config.NewConfig()
-	zapLog, err := logger.NewLogger(cfg.LogFilePath)
+	zapLog, err := logger.NewLogger(cfg.LogFilePath, &cfg.Level)
 	if err != nil {
 		log.Fatal("failed to create logs")
 	}

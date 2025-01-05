@@ -34,6 +34,7 @@ Dockerfile распологается в корне проекта
 
 Файл конфигурации сервера находится в файле config.env
 
+- SERVER_MODE - уровень логирования (default: "info")
 - SERVER_ADDRESS - адрес, на котором запускается сервер (defaut: 0.0.0.0:3353)
 - ADDRESS_FOR_DB - адрес, для прямого подключения к базе данных (defaut: 3354)
 - STORAGE_PATH - путь для хранения файлов пользователей  (defaut: ./serverStorage/)

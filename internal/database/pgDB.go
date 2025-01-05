@@ -18,7 +18,6 @@ type pg struct {
 }
 
 func connectToPgDB(cfg *config.DbConfig) (*pg, error) {
-	fmt.Println(cfg)
 	cfgPG := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable", cfg.Host, cfg.Username, cfg.Password, cfg.Database, cfg.Port)
 	db, err := gorm.Open(postgres.Open(cfgPG), &gorm.Config{})
 	for i := 0; i < 10 && err != nil; i++ {

@@ -4,6 +4,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"go.uber.org/zap/zapcore"
 )
 
 type Config struct {
@@ -12,6 +14,7 @@ type Config struct {
 }
 
 type ServerConfig struct {
+	Level       zapcore.Level
 	Address     string
 	MaxByteSend int
 	TokenTTL    time.Duration
@@ -30,43 +33,40 @@ type DbConfig struct {
 func NewConfig() *Config {
 	return &Config{
 		ServerConfig: ServerConfig{
-			Address:     getEnvString("SERVER_ADDRESS", "0.0.0.0:3353"),
-			MaxByteSend: getEnvInt("MAX_BYTE_SEND", 1000),
-			TokenTTL:    getEnvTime("TokenTTL", time.Hour),
-			StoragePath: getEnvString("STORAGE_PATH", "./serverStorage/"),
-			LogFilePath: getEnvString("LOGFILE", "./internal/logger/"),
+			Level:       getEnv("SERVER_MODE", zapcore.InfoLevel).(zapcore.Level),
+			Address:     getEnv("SERVER_ADDRESS", "0.0.0.0:3353").(string),
+			MaxByteSend: getEnv("MAX_BYTE_SEND", 1000).(int),
+			TokenTTL:    getEnv("TokenTTL", time.Hour).(time.Duration),
+			StoragePath: getEnv("STORAGE_PATH", "./serverStorage/").(string),
+			LogFilePath: getEnv("LOGFILE", "./internal/logger/").(string),
 		},
 		DbConfig: DbConfig{
-			Host:     getEnvString("POSTGRES_HOST", "localhost"),
-			Port:     getEnvString("ADDRESS_FOR_DB", "3354"),
-			Username: getEnvString("POSTGRES_USERNAME", "kulakov"),
-			Password: getEnvString("POSTGRES_PASSWORD", "1234"),
-			Database: getEnvString("POSTGRES_NAME", "fileStorage"),
+			Host:     getEnv("POSTGRES_HOST", "localhost").(string),
+			Port:     getEnv("ADDRESS_FOR_DB", "3354").(string),
+			Username: getEnv("POSTGRES_USERNAME", "kulakov").(string),
+			Password: getEnv("POSTGRES_PASSWORD", "1234").(string),
+			Database: getEnv("POSTGRES_NAME", "fileStorage").(string),
 		},
 	}
 }
 
-func getEnvString(key string, defaultVal string) string {
+func getEnv(key string, defaultVal interface{}) interface{} {
 	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return defaultVal
-}
-
-func getEnvInt(key string, defaultVal int) int {
-	if value, exists := os.LookupEnv(key); exists {
-		if value, err := strconv.Atoi(value); err == nil {
+		switch defaultVal.(type) {
+		case string:
 			return value
-		}
-
-	}
-	return defaultVal
-}
-
-func getEnvTime(key string, defaultVal time.Duration) time.Duration {
-	if value, exists := os.LookupEnv(key); exists {
-		if value, err := time.ParseDuration(value); err == nil {
-			return value
+		case zapcore.Level:
+			if value == "true" {
+				return true
+			}
+		case int:
+			if value, err := strconv.Atoi(value); err == nil {
+				return value
+			}
+		case time.Duration:
+			if value, err := time.ParseDuration(value); err == nil {
+				return value
+			}
 		}
 	}
 	return defaultVal
